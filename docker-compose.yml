@@ -1,0 +1,30 @@
+version: '3'
+services:
+  # By default the gRPC servers are listening at port 8061,
+  # according to AI4EU specifications.
+  # We can distinguish servers by host, defined by the service name
+  # See https://docs.docker.com/compose/networking/
+  image-source:
+    image: sipgisr/camera-feed-grpc:latest
+    environment: 
+    - CAMERA_URL="10.0.14.5:8090" 
+    - REQUEST_URL="/?action=snapshot"
+    - USER="admin" 
+    - PWD="admin"
+  tablet4all:
+    image: sipgisr/paper-tablet:latest
+  visualization:
+    image: sipgisr/image-visualization:latest
+    # Only port visible outside the docker environment
+    # to see the images in the web
+    ports:
+    - 8062:8062
+  orchestrator-node:
+    image: sipgisr/grpc-orchestrator:latest
+    volumes: 
+    - type: bind
+      source: ./Config
+      target: /app/config
+    environment:
+      CONFIG_FILE: "config/config.yaml"
+    command: bash -c "/usr/bin/wait-for-all.sh config/urls.txt && java -cp '*' pipeline.orchestrator.App"

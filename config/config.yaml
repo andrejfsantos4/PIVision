@@ -1,0 +1,19 @@
+stages:
+  - name: "Source"
+    host: image-source
+    port: 8061
+  - name: "Tablet4All"
+    host: tablet4all
+    port: 8061
+  - name: "Visualization"
+    host: visualization
+    port: 8061
+links:
+  - source:
+      stage: "Source"
+    target:
+      stage: "Tablet4All"
+  - source:
+      stage: "Tablet4All"
+    target:
+      stage: "Visualization"
