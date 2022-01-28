@@ -14,8 +14,8 @@ def initArucoPos(template, aruco_dict, arucoParameters):
     gray_template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray_template, aruco_dict, parameters=arucoParameters)
     aruco_pos = np.zeros((len(ids),4,2))
-    aruco_pos[ids]=corners;
-    return aruco_pos;
+    aruco_pos[ids]=corners
+    return aruco_pos
 
 def ImgResize(img, *new_size):
     #Resizes the image img to fit size in new_size.
