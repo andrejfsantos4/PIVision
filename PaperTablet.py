@@ -1,20 +1,18 @@
-
-#TODO: Automatizar a escolha do treshold do erro, por exemplo 1/10 da largura da página
-#TODO: Field for dict size and change in code 4->dict-size
-#IDEA: subtract cropped image with transformed image to get a measure of homography quality.
-#IDEA: In position error function detect if one or more corners are far away from their correct
-#      positions, meaning that the homography is bad
-
 import numpy as np
 import cv2
 from cv2 import aruco as aruco
 
 def initArucoPos(template, aruco_dict, arucoParameters):
-    #Returns the corners of the Aruco markers in the template image
+    """
+    Returns the corners of the Aruco markers in the template image
+
+    :param template: template image
+    :param aruco_dict: dictionary of Aruco codes used in the template image
+    """
     gray_template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray_template, aruco_dict, parameters=arucoParameters)
-    #TODO test this
-    if np.all(ids==None):
+    #TODO: test this
+    if np.all(ids == None):
         print("The server was unable to detect Aruco markers in the template.")
         exit(1)
         
@@ -23,9 +21,13 @@ def initArucoPos(template, aruco_dict, arucoParameters):
     return aruco_pos
 
 def ImgResize(img, *new_size):
-    #Resizes the image img to fit size in new_size.
-    #If new_size only has 1 parameter, it is considered as the final height of img (maintaing aspect ratio)
-    #Receives img as array of uint8 and new_size as tuple
+    """
+    Resizes the image img to fit size in new_size.
+
+    If new_size only has 1 parameter, it is considered as the final height of img (maintaing aspect ratio).
+    :param img: Image as array of uint8 to be resized
+    :param new_size: new image size as tuple
+    """
     if type(new_size[0]) == int:
         dim = (round(new_size[0]/img.shape[0] * img.shape[1]), new_size[0])
     else:
@@ -34,8 +36,11 @@ def ImgResize(img, *new_size):
     return img
 
 def GetHomography(frame, aruco_pos):
-    #Detects Aruco codes in frame and estimates homography from frame to template.
-    #If no Aruco codes are detected returns -1, otherwise returns the homography
+    """
+    Detects Aruco codes in frame and estimates homography from frame to template.
+
+    :return: If no Aruco codes are detected returns -1, otherwise returns the homography.
+    """
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray_frame, dict4_7by7, parameters=arucoParameters)
 
@@ -52,9 +57,13 @@ def GetHomography(frame, aruco_pos):
     return H
 
 def ApplyDetect(img_template, frame, H, dict4_7by7, arucoParameters):
-    #Applies the homography H to the frame and resizes it.
-    #Then detects Aruco codes in the resized frame
-    #Returns the transformed frame, the corners of Aruco codes and their ids
+    """
+    Applies an homography H to an image, resizes it and then detects Aruco codes in the resized frame.
+
+    :param frame: Image that will be transformed.
+    :param H: Homography to be applied.
+    :return: Returns the transformed frame, the corners of Aruco codes and their ids.
+    """
     img_transf = cv2.warpPerspective(frame, H, (img_template.shape[1],img_template.shape[0]))
     img_transf = ImgResize(img_transf, 800)
     gray_img_transf = cv2.cvtColor(img_transf, cv2.COLOR_BGR2GRAY)
@@ -62,9 +71,12 @@ def ApplyDetect(img_template, frame, H, dict4_7by7, arucoParameters):
     return img_transf, corners, ids
 
 def PositionError(corners, ids, aruco_pos, resize_ratio):
-    #Computes the average error, in pixels, between the Aruco codes positions in two different images
-    #resize_ratio is the ratio between the width of the frame and the width of the template
-    #Return -1 as flag if no Aruco codes have been detected
+    """
+    Computes the average error, in pixels, between the Aruco codes positions in two different images.
+
+    :param resize_ratio: The ratio between the width of the frame and the width of the template.
+    :return: -1 as flag if no Aruco codes have been detected
+    """
     if not isinstance(ids, np.ndarray): #means that ids is empty, i.e., no Aruco codes detected
         return -1
 
@@ -74,7 +86,7 @@ def PositionError(corners, ids, aruco_pos, resize_ratio):
     return ave_error/(4*len(ids))
 
 def calling_function(img_in):
-    #This function the "main" function which will call all other functions and implements specific protocols for each situation
+    """This function the "main" function which will call all other functions and implements specific protocols for each situation. """
     global H, aruco_pos, img_template, arucoParameters
     nparr = np.frombuffer(img_in, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -89,7 +101,7 @@ def calling_function(img_in):
     img_transf, corners, ids = ApplyDetect(img_template, frame, H, dict4_7by7, arucoParameters)
     average_error = PositionError(corners, ids, aruco_pos, img_transf.shape[0]/img_template.shape[0] )
     
-    #!!!!!!!!!!!!!!!!!!!!!--------------------------------------------------------------
+    #TODO: make this adjustable
     if (not np.all(ids != None)) or average_error > 30: #If no aruco code has been detected OR if error is to large,
                                                          #means that there was motion and new H is required
         H_new = GetHomography(frame, aruco_pos)
@@ -100,7 +112,7 @@ def calling_function(img_in):
 
         if np.all(ids != None): #If Aruco codes are detected with new homography, evaluate its error
             average_error = PositionError(corners, ids, aruco_pos, img_transf.shape[0]/img_template.shape[0] )
-            if average_error < 30: #!!!!!!!!!!!!!!!!!!!!!--------------------------------------------------------------
+            if average_error < 30: #TODO: make this adjustable
                 H = H_new
                 img_transf = img_transf_new
             #else:
@@ -119,3 +131,10 @@ dict4_7by7 = aruco.custom_dictionary(4, 7)
 arucoParameters = aruco.DetectorParameters_create()
 aruco_pos = initArucoPos(img_template, dict4_7by7, arucoParameters)
 H = -1
+
+
+#TODO: Automatizar a escolha do treshold do erro, por exemplo 1/10 da largura da página
+#TODO: Field for dict size and change in code 4->dict-size
+#IDEA: subtract cropped image with transformed image to get a measure of homography quality.
+#IDEA: In position error function detect if one or more corners are far away from their correct
+#      positions, meaning that the homography is bad
