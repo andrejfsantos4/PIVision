@@ -36,17 +36,19 @@ def ImgResize(img, *new_size):
 def GetHomography(frame, aruco_pos):
     #Detects Aruco codes in frame and estimates homography from frame to template.
     #If no Aruco codes are detected returns -1, otherwise returns the homography
-    src_pts = np.zeros((4*3,2)) #source points: corners in image
-    dst_pts = np.zeros((4*3,2)) #destination points: corners in template
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray_frame, dict4_7by7, parameters=arucoParameters)
-    if np.all(ids != None): #if at least one aruco code has been detected
+
+    if np.all(ids != None):  # if at least one aruco code has been detected
+        src_pts = np.zeros((4 * len(ids), 2))  # source points: corners in image
+        dst_pts = np.zeros((4 * len(ids), 2))  # destination points: corners in template
         for i in range(len(ids)):
             for j in range(4):
-                src_pts[4*i+j,:] = corners[i][0][j]
-                dst_pts[4*i+j,:] = aruco_pos[ids[i,0],j,:]
-        H, mask = cv2.findHomography(src_pts[0:4*len(ids),:], dst_pts[0:4*len(ids),:], cv2.RANSAC, 4)
-    else: return -1
+                src_pts[4 * i + j, :] = corners[i][0][j]
+                dst_pts[4 * i + j, :] = aruco_pos[ids[i, 0], j, :]
+        H, mask = cv2.findHomography(src_pts[0:4 * len(ids), :], dst_pts[0:4 * len(ids), :], cv2.RANSAC, 4)
+    else:
+        return -1
     return H
 
 def ApplyDetect(img_template, frame, H, dict4_7by7, arucoParameters):
@@ -109,10 +111,6 @@ def calling_function(img_in):
     return cv2.imencode('.png', img_transf)[1].tobytes()
 
 #Global variables:
-# aruco_pos = np.array([[[45,46],[281,46], [281,282], [45,282]],
-#                       [[1367,46],[1603,46],[1603,282],[1367,282]],
-#                       [[748,2134],[905,2134],[905,2289],[748,2289]]])
-
 img_template = cv2.imread('Template.png')
 if img_template is None:
     print("The server was unable to read the template.")
