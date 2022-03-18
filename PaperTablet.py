@@ -16,7 +16,7 @@ def initArucoPos(template, aruco_dict, arucoParameters):
     #TODO test this
     if np.all(ids==None):
         print("The server was unable to detect Aruco markers in the template.")
-        exit()
+        exit(1)
         
     aruco_pos = np.zeros((len(ids),4,2))
     aruco_pos[ids]=corners
