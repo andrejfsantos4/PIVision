@@ -1,6 +1,6 @@
 
 #TODO: Automatizar a escolha do treshold do erro, por exemplo 1/10 da largura da página
-#TODO: passar template 1080p -> depois corigir aruco_pos
+#TODO: Field for dict size and change in code 4->dict-size
 #IDEA: subtract cropped image with transformed image to get a measure of homography quality.
 #IDEA: In position error function detect if one or more corners are far away from their correct
 #      positions, meaning that the homography is bad
@@ -13,6 +13,11 @@ def initArucoPos(template, aruco_dict, arucoParameters):
     #Returns the corners of the Aruco markers in the template image
     gray_template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray_template, aruco_dict, parameters=arucoParameters)
+    #TODO test this
+    if np.all(ids==None):
+        print("The server was unable to detect Aruco markers in the template.")
+        exit()
+        
     aruco_pos = np.zeros((len(ids),4,2))
     aruco_pos[ids]=corners
     return aruco_pos
